@@ -1,0 +1,32 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyd
+
+# Environments
+.venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data
+data/raw/*
+data/processed/*
+data/splits/*
+
+# Trained models
+models/*
+*.pt
+*.pth
+*.ckpt
+
+# Results
+results/*
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
