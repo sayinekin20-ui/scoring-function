@@ -1,6 +1,5 @@
-﻿from rdkit import Chem
+from rdkit import Chem
 import torch
-from torch_geometric.data import Data
 
 
 def atom_features(atom: Chem.Atom) -> list[float]:
@@ -12,8 +11,22 @@ def atom_features(atom: Chem.Atom) -> list[float]:
         float(atom.GetTotalNumHs()),
         float(atom.GetIsAromatic()),
         float(atom.GetHybridization()),
+
     ]
 
+from torch_geometric.data import Data
+
+
+def bond_features(bond: Chem.Bond) -> list[float]:
+    """Convert an RDKit bond into a numerical feature vector."""
+    bond_type = bond.GetBondType()
+
+    return [
+        float(bond_type == Chem.BondType.SINGLE),
+        float(bond_type == Chem.BondType.DOUBLE),
+        float(bond_type == Chem.BondType.TRIPLE),
+        float(bond_type == Chem.BondType.AROMATIC),
+    ]
 
 def mol_to_graph(smiles: str) -> Data:
     """Convert a SMILES string into a PyTorch Geometric molecular graph."""
@@ -22,17 +35,20 @@ def mol_to_graph(smiles: str) -> Data:
     if mol is None:
         raise ValueError(f"Invalid SMILES: {smiles}")
 
+    # Atom feature matrix
     x = torch.tensor(
         [atom_features(atom) for atom in mol.GetAtoms()],
         dtype=torch.float,
     )
 
+    # Bond connectivity
     edges = []
 
     for bond in mol.GetBonds():
         i = bond.GetBeginAtomIdx()
         j = bond.GetEndAtomIdx()
 
+        # Molecular graphs are represented as directed edges
         edges.append([i, j])
         edges.append([j, i])
 
