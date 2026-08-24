@@ -1,5 +1,6 @@
 from rdkit import Chem
 import torch
+from torch_geometric.data import Data
 
 
 def atom_features(atom: Chem.Atom) -> list[float]:
@@ -11,10 +12,7 @@ def atom_features(atom: Chem.Atom) -> list[float]:
         float(atom.GetTotalNumHs()),
         float(atom.GetIsAromatic()),
         float(atom.GetHybridization()),
-
     ]
-
-from torch_geometric.data import Data
 
 
 def bond_features(bond: Chem.Bond) -> list[float]:
@@ -28,6 +26,7 @@ def bond_features(bond: Chem.Bond) -> list[float]:
         float(bond_type == Chem.BondType.AROMATIC),
     ]
 
+
 def mol_to_graph(smiles: str) -> Data:
     """Convert a SMILES string into a PyTorch Geometric molecular graph."""
     mol = Chem.MolFromSmiles(smiles)
@@ -35,35 +34,52 @@ def mol_to_graph(smiles: str) -> Data:
     if mol is None:
         raise ValueError(f"Invalid SMILES: {smiles}")
 
-    # Atom feature matrix
+    # Atom features
     x = torch.tensor(
         [atom_features(atom) for atom in mol.GetAtoms()],
         dtype=torch.float,
     )
 
-    # Bond connectivity
+    # Bond connectivity + bond features
     edges = []
+    edge_features = []
 
     for bond in mol.GetBonds():
         i = bond.GetBeginAtomIdx()
         j = bond.GetEndAtomIdx()
+        features = bond_features(bond)
 
-        # Molecular graphs are represented as directed edges
+        # Add both directions because molecular graphs are represented
+        # as directed edges in PyTorch Geometric.
         edges.append([i, j])
+        edge_features.append(features)
+
         edges.append([j, i])
+        edge_features.append(features)
 
     if edges:
         edge_index = torch.tensor(
             edges,
             dtype=torch.long,
         ).t().contiguous()
+
+        edge_attr = torch.tensor(
+            edge_features,
+            dtype=torch.float,
+        )
     else:
         edge_index = torch.empty(
             (2, 0),
             dtype=torch.long,
         )
 
+        edge_attr = torch.empty(
+            (0, 4),
+            dtype=torch.float,
+        )
+
     return Data(
         x=x,
         edge_index=edge_index,
+        edge_attr=edge_attr,
     )
