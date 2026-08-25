@@ -1,0 +1,12 @@
+name: scoring-function
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12
+  - rdkit
+  - pytorch
+  - pip
+  - pip:
+      - torch-geometric
